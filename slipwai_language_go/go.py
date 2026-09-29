@@ -1,6 +1,7 @@
 """The Go backend: one module per service, its committed variants, and the workspace above them."""
 from __future__ import annotations
 
+from ... import registry as protocol
 from ...assets import LANGUAGE_ROOT, asset_tree
 from ...backends import APP
 from ...errors import GenerationError
@@ -181,3 +182,15 @@ for app in {apps}; do
 done
 """
     return files
+
+
+LANGUAGE = protocol.Language(
+    (protocol.Family("go"),),
+    (protocol.Backend("go", "go", {
+        protocol.SERVICE_FILES: service_files,
+        protocol.NAME_SERVICE: name_service,
+        protocol.REPOSITORY_FILES: repository_files,
+        protocol.READY_PATH: "/ready",
+        protocol.HEALTH_BODY: '{"status":"ok"}',
+    }),),
+)
