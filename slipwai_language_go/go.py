@@ -14,9 +14,10 @@ from ..ci_workflows import dependency_paths
 from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
-from ..mutation import GO_GREMLINS, GO_MUTATION_SCRIPT
 from . import go_layout as layout
+from . import go_project as project
 from . import go_toolchain as toolchain
+from .go_project import GO_GREMLINS, GO_MUTATION_SCRIPT
 from .go_prune_rows import PRUNE_ROWS
 from .go_toolchain import GO_COVDATA_READY, GO_COVERAGE_MINIMUM, GO_COVERAGE_SCRIPT, GO_STATICCHECK, GO_TEST_COMMAND
 
@@ -125,7 +126,7 @@ def repository_files(
 
     The gate scripts are written once for the family, however many Go services there are: `make test`'s
     coverage gate and `make mutation`'s Gremlins wrapper, which stages a service beside the workspace modules
-    it imports because Gremlins copies only the module it mutates (`project/mutation.py` has the account).
+    it imports because Gremlins copies only the module it mutates (`go_project.py` has the account).
     The wrapper carries the pinned release, substituted here so the pin is written in one place. The verify
     script names the coverage gate beside itself rather than from the root, because a delivery layout moves
     `scripts/` and re-points every root-relative path but the ones inside code (`layout.py`).
@@ -195,5 +196,6 @@ LANGUAGE = protocol.Language(
         protocol.POSTGRES_SSLMODE: {"rds": "require", "flexible-server": "require"},
         protocol.SERVICE_DESCRIPTORS: {},
         **layout.ANSWERS,
+        **project.ANSWERS,
     }),),
 )

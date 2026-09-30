@@ -13,7 +13,7 @@ from typing import Any
 from ... import registry as protocol
 from ...backends import APP, Tooling
 from ...tooling import for_app
-from ..mutation import GO_MUTATION_SCRIPT
+from .go_project import GO_MUTATION_SCRIPT
 
 # The coverage gate `make test` holds a Go service to, and the script that is the gate. The test line writes
 # a profile with `-coverpkg=./...`, because without it Go credits a package only with its own tests and the
@@ -84,7 +84,7 @@ NATIVE_COMMANDS = {
     "audit": f"@command -v govulncheck >/dev/null 2>&1 || {{ echo 'install govulncheck to run dependency audit' >&2; exit 2; }}; cd {APP} && govulncheck ./...",
     # Gremlins through the wrapper, which stages the service beside the workspace modules it imports
     # and fails a run Gremlins would pass on nothing. The gate is the service's `.gremlins.yaml`:
-    # Gremlins 0.6.0 ignores a threshold given as a flag, so none is given here (see `mutation.py`).
+    # Gremlins 0.6.0 ignores a threshold given as a flag, so none is given here (see `go_project.py`).
     #
     # `make mutation SINCE=main` scopes the run to what differs from that ref, which is the whole
     # module's price against one change's. Written as a conditional rather than read from a variable
@@ -112,7 +112,7 @@ def event_store_directory(path: str) -> str:
 BACKEND: dict[protocol.Member[Any], object] = {
     protocol.TOOLING: TOOLING,
     protocol.FEATURE_TOOLING: {},
-    # The gate scripts a Go service runs through; `go.py` writes them, `project/mutation.py` says why.
+    # The gate scripts a Go service runs through; `go.py` writes them, `go_project.py` says why.
     protocol.EXECUTABLES: frozenset({GO_COVERAGE_SCRIPT, GO_MUTATION_SCRIPT}),
     protocol.DEV_COMMAND: dev_command,
     protocol.COMPOSE_CACHES: ("/root/go", "/root/.cache"),
