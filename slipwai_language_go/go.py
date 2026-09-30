@@ -15,6 +15,7 @@ from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
 from ..mutation import GO_GREMLINS, GO_MUTATION_SCRIPT
+from . import go_layout as layout
 from . import go_toolchain as toolchain
 from .go_toolchain import GO_COVDATA_READY, GO_COVERAGE_MINIMUM, GO_COVERAGE_SCRIPT, GO_STATICCHECK, GO_TEST_COMMAND
 
@@ -43,7 +44,7 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
     files.update(flag_reader(target, "go"))
     # And the entry point's half of it: the source is handed to `BuildApp`, which is what puts
     # `/api/flags` in front of the browser app. `nil`, not an unresolved placeholder, with no reader.
-    wire_entry(files, target)
+    wire_entry(files, target, "go")
     # And the store's half: which adapter this project opens, and what `/ready` is handed. See
     # `composition.py` — the entry point is the only place that may name the answer.
     wire_store(files, selection, "go")
@@ -163,7 +164,7 @@ def ci_toolchain_setup(services: list[App]) -> str:
 
 
 LANGUAGE = protocol.Language(
-    (protocol.Family("go", toolchain.FAMILY | {protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup}),),
+    (protocol.Family("go", toolchain.FAMILY | layout.FAMILY_ANSWERS | {protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup}),),
     (protocol.Backend("go", "go", toolchain.BACKEND | {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,
@@ -189,5 +190,6 @@ LANGUAGE = protocol.Language(
         # Per managed-database kind; `images.py`, above `POSTGRES_SSLMODE_KINDS`, says how each was measured.
         protocol.POSTGRES_SSLMODE: {"rds": "require", "flexible-server": "require"},
         protocol.SERVICE_DESCRIPTORS: {},
+        **layout.ANSWERS,
     }),),
 )
