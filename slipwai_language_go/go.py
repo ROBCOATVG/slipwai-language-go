@@ -203,5 +203,10 @@ LANGUAGE = protocol.Language(
                 "--tags $(GIT_SHA) --platform $(PLATFORM)"
             ),
         },
+        # A second image, because ko builds one binary per image: the one-off task runs `cmd/migrate`.
+        protocol.MIGRATIONS_IN_PRODUCTION: {"image": "migrate", "build": (
+            f"cd {APP} && KO_DOCKER_REPO={REPOSITORY} ko build ./cmd/migrate --bare --local "
+            "--tags $(GIT_SHA) --platform $(PLATFORM)"
+        )},
     }),),
 )
