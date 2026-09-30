@@ -5,6 +5,7 @@ from ... import registry as protocol
 from ...assets import LANGUAGE_ROOT, asset_tree
 from ...backends import APP
 from ...errors import GenerationError
+from ...images import REPOSITORY
 from ...selection import Selection
 from ...services import App
 from ...tooling import package_name
@@ -192,5 +193,15 @@ LANGUAGE = protocol.Language(
         protocol.REPOSITORY_FILES: repository_files,
         protocol.READY_PATH: "/ready",
         protocol.HEALTH_BODY: '{"status":"ok"}',
+        protocol.IMAGE_BUILDER: {
+            "tool": "ko",
+            # `--bare` so the image is exactly `__REPOSITORY__`, `--local` so it lands in the daemon like every
+            # other backend's and `make push` is one command for all of them. ko's default base is Chainguard's
+            # static image, which is right for a binary that needs nothing; `KO_DEFAULTBASEIMAGE` overrides it.
+            "build": (
+                f"cd {APP} && KO_DOCKER_REPO={REPOSITORY} ko build ./cmd/serve --bare --local "
+                "--tags $(GIT_SHA) --platform $(PLATFORM)"
+            ),
+        },
     }),),
 )
