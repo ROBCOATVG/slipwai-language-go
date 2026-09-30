@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from ... import registry as protocol
-from ..renovate import RenovateRules
+from slipwai import registry as protocol
+from slipwai.project.renovate import RenovateRules
 
 # Gremlins, pinned to a release and run through `go run`, so the tool is never a dependency of the module it
 # mutates and the same build runs on every machine. It replaced go-mutesting, whose package loader was

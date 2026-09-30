@@ -10,9 +10,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from ... import registry as protocol
-from ...backends import APP, Tooling
-from ...tooling import for_app
+from slipwai import registry as protocol
+from slipwai.backends import APP, Tooling
+from slipwai.tooling import for_app
+
 from .go_project import GO_MUTATION_SCRIPT
 
 # The coverage gate `make test` holds a Go service to, and the script that is the gate. The test line writes

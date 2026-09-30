@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from ... import registry as protocol
-from ..entry_stores import EntryStore, tab_marked
-from ..flag_route import EntryWiring
-from ..flags import FlagReader
+from slipwai import registry as protocol
+from slipwai.project.entry_stores import EntryStore, tab_marked
+from slipwai.project.flag_route import EntryWiring
+from slipwai.project.flags import FlagReader
 
 # The write side: the event port, the adapters behind it, their contract suites and the migrations, and each
 # transport's and identity provider's own files.

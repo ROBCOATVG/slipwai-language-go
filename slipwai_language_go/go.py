@@ -1,19 +1,25 @@
-"""The Go backend: one module per service, its committed variants, and the workspace above them."""
+"""The Go backend: one module per service, its committed variants, and the workspace above them.
+
+This is the `go` language package: core loads it from the language directory, and its assets are read from
+the `assets/` beside this package."""
 from __future__ import annotations
 
-from ... import registry as protocol
-from ...assets import LANGUAGE_ROOT, asset_tree
-from ...backends import APP
-from ...errors import GenerationError
-from ...images import REPOSITORY
-from ...selection import Selection
-from ...services import App
-from ...tooling import package_name
-from ..backing_services import backing_service_service_files
-from ..ci_workflows import dependency_paths
-from ..composition import wire_store
-from ..flag_route import wire_entry
-from ..flags import flag_reader
+from pathlib import Path
+
+from slipwai import registry as protocol
+from slipwai.assets import asset_tree
+from slipwai.backends import APP
+from slipwai.errors import GenerationError
+from slipwai.images import REPOSITORY
+from slipwai.project.backing_services import backing_service_service_files
+from slipwai.project.ci_workflows import dependency_paths
+from slipwai.project.composition import wire_store
+from slipwai.project.flag_route import wire_entry
+from slipwai.project.flags import flag_reader
+from slipwai.selection import Selection
+from slipwai.services import App
+from slipwai.tooling import package_name
+
 from . import go_layout as layout
 from . import go_project as project
 from . import go_toolchain as toolchain
@@ -21,6 +27,10 @@ from .go_project import GO_GREMLINS, GO_MUTATION_SCRIPT
 from .go_prune_rows import PRUNE_ROWS
 from .go_toolchain import GO_COVDATA_READY, GO_COVERAGE_MINIMUM, GO_COVERAGE_SCRIPT, GO_STATICCHECK, GO_TEST_COMMAND
 
+# This package's own assets, the layout core's readers use for every language: `languages/go/…` and
+# `backing-services/go/…` beneath it. Resolved from this file, so a checkout and a copy in the home directory
+# read the same files.
+ASSETS = Path(__file__).resolve().parents[1] / "assets"
 # The token the mutation script carries where the pinned Gremlins release goes, so the pin is written once.
 GO_GREMLINS_TOKEN = "__GO_GREMLINS__"
 # What this service calls itself in a trace, carried in `config.go` as a token for the reason the module
@@ -31,7 +41,7 @@ SERVICE_NAME = "__SERVICE_NAME__"
 
 def service_files(event: bool, selection: Selection, target: str = "none") -> dict[str, str]:
     """What this backend puts in a service's directory, keyed relative to it."""
-    files = asset_tree(LANGUAGE_ROOT / "go/app")
+    files = asset_tree(ASSETS / "languages/go/app")
     files["go.mod"] = go_module(selection)
     checksums = go_checksums(selection)
     if checksums is not None:
@@ -39,7 +49,7 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
     if event and not selection.has("memory"):
         # Only for a backend whose event-store axis is not offered yet: a port with a shape and no
         # adapter behind it. Once the axis is asked, the port and its adapters arrive together.
-        files.update(asset_tree(LANGUAGE_ROOT / "go/event-port"))
+        files.update(asset_tree(ASSETS / "languages/go/event-port"))
     files.update(backing_service_service_files(selection, "go"))
     # The flag reader, only where there is somewhere to deploy: a flag is what makes a merge and a release
     # two decisions, and `--target none` has neither the mechanism nor the unsafe push. See `flags.py`.
@@ -79,12 +89,12 @@ def go_module_variant(selection: Selection) -> str:
 
 
 def go_module(selection: Selection) -> str:
-    return (LANGUAGE_ROOT / f"go/modules/{go_module_variant(selection)}/go.mod").read_text()
+    return (ASSETS / f"languages/go/modules/{go_module_variant(selection)}/go.mod").read_text()
 
 
 def go_checksums(selection: Selection) -> str | None:
     """The committed `go.sum`, or None for a variant that requires nothing."""
-    path = LANGUAGE_ROOT / f"go/modules/{go_module_variant(selection)}/go.sum"
+    path = ASSETS / f"languages/go/modules/{go_module_variant(selection)}/go.sum"
     return path.read_text() if path.is_file() else None
 
 
@@ -134,7 +144,7 @@ def repository_files(
     uses = "".join(f"use ./{service.path}\n" for service in services)
     files["go.work"] = f"go {go_language_version(files[f'{services[0].path}/go.mod'])}\n\n{uses}"
     for script in (GO_COVERAGE_SCRIPT, GO_MUTATION_SCRIPT):
-        files[script] = (LANGUAGE_ROOT / f"go/{script}").read_text().replace(GO_GREMLINS_TOKEN, GO_GREMLINS)
+        files[script] = (ASSETS / f"languages/go/{script}").read_text().replace(GO_GREMLINS_TOKEN, GO_GREMLINS)
     apps = " ".join(service.path for service in services)
     files[verify] = f"""#!/bin/sh
 set -eu
