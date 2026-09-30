@@ -13,6 +13,7 @@ from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
 from ..mutation import GO_GREMLINS, GO_MUTATION_SCRIPT
+from . import go_layout as layout
 
 # The coverage gate `make test` holds a Go service to, and the script that is the gate. The test line writes
 # a profile with `-coverpkg=./...`, because without it Go credits a package only with its own tests and the
@@ -192,5 +193,6 @@ LANGUAGE = protocol.Language(
         protocol.REPOSITORY_FILES: repository_files,
         protocol.READY_PATH: "/ready",
         protocol.HEALTH_BODY: '{"status":"ok"}',
+        **layout.ANSWERS,
     }),),
 )
