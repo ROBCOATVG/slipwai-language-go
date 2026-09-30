@@ -1,7 +1,7 @@
 """Go's toolchain: how a service in this language installs, starts, checks and formats itself.
 
-These are the language's answers to the toolchain members of the backend protocol (`src/slipwai/registry.py`,
-whose shapes are fixed in `specs/001-slipwai-2-language-addons/contracts/backend-protocol.md`). `BACKEND` is
+These are the language's answers to the toolchain members of the backend protocol (slipwai's `registry` module,
+whose shapes are fixed in its backend-protocol contract). `BACKEND` is
 what the `go` backend answers and `FAMILY` what the family does. `go.py`'s `LANGUAGE` takes both in, and its
 verify script runs the same gate lines as the Makefile, named once here. A command spells a service's path
 `APP`, which `tooling.for_app` stamps per service.

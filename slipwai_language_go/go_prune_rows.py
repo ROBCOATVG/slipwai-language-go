@@ -1,7 +1,7 @@
 """The Go family's rows for the generated pruning script (`prune_rows`, S06).
 
 Written into a project's `scripts/backing-services.py` when it has a Go service, and read by the factory's own
-pruner. The shape is fixed in `specs/001-slipwai-2-language-addons/contracts/backend-protocol.md`.
+pruner. The shape is fixed in slipwai's backend-protocol contract.
 """
 from __future__ import annotations
 
