@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from ... import registry as protocol
+from ..flag_route import EntryWiring
 from ..flags import FlagReader
 
 # The write side: the event port, the adapters behind it, their contract suites and the migrations, and each
@@ -117,8 +118,27 @@ READER = FlagReader(
     call='flags.Enabled("checkout-v2")',
 )
 
+# How the flag source is wired into this backend's entry point, keyed by the HTTP option whose app takes it
+# (`flag_route.wire_entry`). No `flag_resource`: this backend's transports are handed the source, and
+# discover no route.
+# Go imports by module path rather than relatively, so the line carries the template spelling of the
+# module — `name_service` renames it along with every other `example.com/delivery-starter` here, for
+# the same reason the flag reader keeps its paths in the template spelling. The placeholder sits
+# between `config` and `observability` in `serve_main.go` because `gofmt` sorts the group's paths,
+# and a block that puts `flags` after `observability` is the first lint a production Go project fails.
+WIRING = {
+    "net-http": EntryWiring(
+        entry="cmd/serve/main.go",
+        line='\t"example.com/delivery-starter/flags"',
+        argument="flags.DefaultSource()",
+        absent="nil",
+    ),
+}
+
 ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.WRITE_SIDE_FILES: WRITE_SIDE,
     protocol.READ_SIDE_FILES: READ_SIDE,
     protocol.FLAG_READER: READER,
+    protocol.ENTRY_WIRING: WIRING,
+    protocol.FLAG_RESOURCE: {},
 }

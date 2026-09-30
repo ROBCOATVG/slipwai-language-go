@@ -83,7 +83,7 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
     files.update(flag_reader(target, "go"))
     # And the entry point's half of it: the source is handed to `BuildApp`, which is what puts
     # `/api/flags` in front of the browser app. `nil`, not an unresolved placeholder, with no reader.
-    wire_entry(files, target)
+    wire_entry(files, target, "go")
     # And the store's half: which adapter this project opens, and what `/ready` is handed. See
     # `composition.py` — the entry point is the only place that may name the answer.
     wire_store(files, selection, "go")
