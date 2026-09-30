@@ -186,7 +186,7 @@ done
 
 
 LANGUAGE = protocol.Language(
-    (protocol.Family("go"),),
+    (protocol.Family("go", layout.FAMILY_ANSWERS),),
     (protocol.Backend("go", "go", {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,

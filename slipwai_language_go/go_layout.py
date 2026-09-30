@@ -203,6 +203,16 @@ STORE = EntryStore(
 )
 
 
+# What "code shared between services" is in this family, and what sharing it would ask of the build: the
+# architecture page's paragraph. The family's answer rather than a backend's, because the unit of sharing is
+# the build tool's rather than the framework's.
+SHARED = (
+    "a Go module under `packages/<name>`, added to `go.work` beside the services and imported by its module "
+    "path — inside the workspace no `replace` directive is needed. `make mutation` stages the service beside "
+    "the workspace modules it imports before Gremlins runs (`scripts/go-mutation.py`), because Gremlins copies "
+    "only the module it mutates and would not find them; the shared module is built there, never mutated"
+)
+
 ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.WRITE_SIDE_FILES: WRITE_SIDE,
     protocol.READ_SIDE_FILES: READ_SIDE,
@@ -211,3 +221,6 @@ ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.FLAG_RESOURCE: {},
     protocol.ENTRY_STORE: STORE,
 }
+
+# The family's own: `shared_code` is read by family name (`guidance.architecture`).
+FAMILY_ANSWERS: dict[protocol.Member[Any], object] = {protocol.SHARED_CODE: SHARED}
