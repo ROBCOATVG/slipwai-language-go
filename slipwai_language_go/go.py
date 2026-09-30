@@ -13,6 +13,7 @@ from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
 from ..mutation import GO_GREMLINS, GO_MUTATION_SCRIPT
+from .go_prune_rows import PRUNE_ROWS
 
 # The coverage gate `make test` holds a Go service to, and the script that is the gate. The test line writes
 # a profile with `-coverpkg=./...`, because without it Go credits a package only with its own tests and the
@@ -185,7 +186,7 @@ done
 
 
 LANGUAGE = protocol.Language(
-    (protocol.Family("go"),),
+    (protocol.Family("go", {protocol.PRUNE_ROWS: PRUNE_ROWS}),),
     (protocol.Backend("go", "go", {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,
