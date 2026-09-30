@@ -17,6 +17,7 @@ from ..flags import flag_reader
 from ..mutation import GO_GREMLINS, GO_MUTATION_SCRIPT
 from . import go_layout as layout
 from . import go_toolchain as toolchain
+from .go_prune_rows import PRUNE_ROWS
 from .go_toolchain import GO_COVDATA_READY, GO_COVERAGE_MINIMUM, GO_COVERAGE_SCRIPT, GO_STATICCHECK, GO_TEST_COMMAND
 
 # The token the mutation script carries where the pinned Gremlins release goes, so the pin is written once.
@@ -164,7 +165,10 @@ def ci_toolchain_setup(services: list[App]) -> str:
 
 
 LANGUAGE = protocol.Language(
-    (protocol.Family("go", toolchain.FAMILY | layout.FAMILY_ANSWERS | {protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup}),),
+    (protocol.Family("go", toolchain.FAMILY | layout.FAMILY_ANSWERS | {
+        protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup,
+        protocol.PRUNE_ROWS: PRUNE_ROWS,
+    }),),
     (protocol.Backend("go", "go", toolchain.BACKEND | {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,
