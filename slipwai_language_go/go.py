@@ -3,11 +3,14 @@ from __future__ import annotations
 
 from ... import registry as protocol
 from ...assets import LANGUAGE_ROOT, asset_tree
+from ...backends import APP
 from ...errors import GenerationError
+from ...images import REPOSITORY
 from ...selection import Selection
 from ...services import App
 from ...tooling import package_name
 from ..backing_services import backing_service_service_files
+from ..ci_workflows import dependency_paths
 from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
@@ -142,13 +145,49 @@ done
     return files
 
 
+def ci_toolchain_setup(services: list[App]) -> str:
+    """One Go version for the workspace, read from the first Go service's module; `go.work` pins the rest.
+
+    The cache is keyed on every module's `go.sum` and the workspace's `go.work.sum` by name, because
+    setup-go's default key is a `go.sum` at the root, which a workspace does not have: it restores nothing,
+    saves nothing, says so only as a warning, and the run stays green and downloads and compiles every module
+    from cold each time — a cache that never hits looks like one that does.
+    """
+    return (
+        "      - uses: actions/setup-go@v7\n        with:\n"
+        f"          go-version-file: {services[0].path}/go.mod\n"
+        "          cache-dependency-path: "
+        + dependency_paths([*(f"{s.path}/go.sum" for s in services), "go.work.sum"])
+        + "\n"
+    )
+
+
 LANGUAGE = protocol.Language(
-    (protocol.Family("go", toolchain.FAMILY),),
+    (protocol.Family("go", toolchain.FAMILY | {protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup}),),
     (protocol.Backend("go", "go", toolchain.BACKEND | {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,
         protocol.REPOSITORY_FILES: repository_files,
         protocol.READY_PATH: "/ready",
         protocol.HEALTH_BODY: '{"status":"ok"}',
+        protocol.IMAGE_BUILDER: {
+            "tool": "ko",
+            # `--bare` so the image is exactly `__REPOSITORY__`, `--local` so it lands in the daemon like every
+            # other backend's and `make push` is one command for all of them. ko's default base is Chainguard's
+            # static image, which is right for a binary that needs nothing; `KO_DEFAULTBASEIMAGE` overrides it.
+            "build": (
+                f"cd {APP} && KO_DOCKER_REPO={REPOSITORY} ko build ./cmd/serve --bare --local "
+                "--tags $(GIT_SHA) --platform $(PLATFORM)"
+            ),
+        },
+        # A second image, because ko builds one binary per image: the one-off task runs `cmd/migrate`.
+        protocol.MIGRATIONS_IN_PRODUCTION: {"image": "migrate", "build": (
+            f"cd {APP} && KO_DOCKER_REPO={REPOSITORY} ko build ./cmd/migrate --bare --local "
+            "--tags $(GIT_SHA) --platform $(PLATFORM)"
+        )},
+        # pgx parses it as libpq does, where `require` is "encrypt, do not verify".
+        # Per managed-database kind; `images.py`, above `POSTGRES_SSLMODE_KINDS`, says how each was measured.
+        protocol.POSTGRES_SSLMODE: {"rds": "require", "flexible-server": "require"},
+        protocol.SERVICE_DESCRIPTORS: {},
     }),),
 )
