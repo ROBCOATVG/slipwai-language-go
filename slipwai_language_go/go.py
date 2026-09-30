@@ -10,6 +10,7 @@ from ...selection import Selection
 from ...services import App
 from ...tooling import package_name
 from ..backing_services import backing_service_service_files
+from ..ci_workflows import dependency_paths
 from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
@@ -185,8 +186,25 @@ done
     return files
 
 
+def ci_toolchain_setup(services: list[App]) -> str:
+    """One Go version for the workspace, read from the first Go service's module; `go.work` pins the rest.
+
+    The cache is keyed on every module's `go.sum` and the workspace's `go.work.sum` by name, because
+    setup-go's default key is a `go.sum` at the root, which a workspace does not have: it restores nothing,
+    saves nothing, says so only as a warning, and the run stays green and downloads and compiles every module
+    from cold each time — a cache that never hits looks like one that does.
+    """
+    return (
+        "      - uses: actions/setup-go@v7\n        with:\n"
+        f"          go-version-file: {services[0].path}/go.mod\n"
+        "          cache-dependency-path: "
+        + dependency_paths([*(f"{s.path}/go.sum" for s in services), "go.work.sum"])
+        + "\n"
+    )
+
+
 LANGUAGE = protocol.Language(
-    (protocol.Family("go"),),
+    (protocol.Family("go", {protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup}),),
     (protocol.Backend("go", "go", {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,
