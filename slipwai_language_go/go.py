@@ -166,7 +166,7 @@ def ci_toolchain_setup(services: list[App]) -> str:
 
 
 LANGUAGE = protocol.Language(
-    (protocol.Family("go", toolchain.FAMILY | layout.FAMILY_ANSWERS | {
+    (protocol.Family("go", toolchain.FAMILY | layout.FAMILY_ANSWERS | project.FAMILY_ANSWERS | {
         protocol.CI_TOOLCHAIN_SETUP: ci_toolchain_setup,
         protocol.PRUNE_ROWS: PRUNE_ROWS,
     }),),
