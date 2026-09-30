@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from ... import registry as protocol
+from ..entry_stores import EntryStore, tab_marked
 from ..flag_route import EntryWiring
 from ..flags import FlagReader
 
@@ -135,10 +136,78 @@ WIRING = {
     ),
 }
 
+# What this backend's entry point writes for each event-store answer: `entry_stores.py` says what the fields
+# mean, and `composition.wire_store`, which reads it, the three rules every string here follows.
+GO_MEMORY_IMPORT = '\t"example.com/delivery-starter/adapters/driven/eventstorememory"\n'
+GO_PORT_IMPORT = '\t"example.com/delivery-starter/application/ports/events"\n'
+GO_FALLBACK = """	// The event store this project answered the event-store question with, opened once and handed to
+	// whatever needs it — from the checked environment rather than from os.Getenv, because `config` is
+	// where this service's variables are held to a shape.
+	//
+	// The marked block is the answer; delete it — which is what `./init --event-store memory` does —
+	// and the in-memory store it starts as is what is left — no nil check a marked block makes never-true (SA4023).
+	var store events.Store = eventstorememory.New()
+"""
+# Go has no `*_OR_MEMORY` tail: its fallback is the declaration *above* the region, already assigned.
+
+STORE = EntryStore(
+    entry="cmd/serve/main.go",
+    imports={
+        None: f"\n{GO_MEMORY_IMPORT}",
+        "sqlite": "\n"
+        + GO_MEMORY_IMPORT
+        + tab_marked(
+            '\t"example.com/delivery-starter/adapters/driven/eventstoresqlite"',
+        )
+        + GO_PORT_IMPORT,
+        "postgres": "\n"
+        + GO_MEMORY_IMPORT
+        + tab_marked(
+            '\t"example.com/delivery-starter/adapters/driven/eventstorepostgres"',
+        )
+        + GO_PORT_IMPORT
+        + tab_marked('\t"github.com/jackc/pgx/v5/pgxpool"'),
+    },
+    open={
+        None: (
+            "\t// The event store this project answered the event-store question with, opened once, here,\n"
+            "\t// and handed to whatever needs it. Nothing else in this service constructs one.\n"
+            "\tstore := eventstorememory.New()\n\n"
+        ),
+        "sqlite": GO_FALLBACK
+        + tab_marked(
+            "\tsqliteStore, err := eventstoresqlite.Open(settings.EventStorePath)\n"
+            "\tif err != nil {\n"
+            "\t\treturn err\n"
+            "\t}\n"
+            "\tdefer sqliteStore.Close()\n"
+            "\tstore = sqliteStore",
+        ),
+        "postgres": GO_FALLBACK
+        + tab_marked(
+            "\t// pgxpool connects lazily, so this opens no socket while the process is starting: an\n"
+            "\t// unreachable database shows up as /ready answering 503, which is what it is. A bad\n"
+            "\t// connection string is a different thing and does stop the process, because nothing\n"
+            "\t// about it will get better on its own — though `config` has already refused the\n"
+            "\t// shapes it can name.\n"
+            "\tpool, err := pgxpool.New(ctx, settings.DatabaseURL)\n"
+            "\tif err != nil {\n"
+            "\t\treturn err\n"
+            "\t}\n"
+            "\tdefer pool.Close()\n"
+            "\tstore = eventstorepostgres.New(pool)",
+        ),
+    },
+    argument="store",
+    absent="nil",
+)
+
+
 ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.WRITE_SIDE_FILES: WRITE_SIDE,
     protocol.READ_SIDE_FILES: READ_SIDE,
     protocol.FLAG_READER: READER,
     protocol.ENTRY_WIRING: WIRING,
     protocol.FLAG_RESOURCE: {},
+    protocol.ENTRY_STORE: STORE,
 }
