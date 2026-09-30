@@ -211,5 +211,6 @@ LANGUAGE = protocol.Language(
         # pgx parses it as libpq does, where `require` is "encrypt, do not verify".
         # Per managed-database kind; `images.py`, above `POSTGRES_SSLMODE_KINDS`, says how each was measured.
         protocol.POSTGRES_SSLMODE: {"rds": "require", "flexible-server": "require"},
+        protocol.SERVICE_DESCRIPTORS: {},
     }),),
 )
