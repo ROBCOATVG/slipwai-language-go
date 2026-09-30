@@ -1,0 +1,19 @@
+{
+  "name": "go",
+  "core": ">=9.0,<10",
+  "order": 30,
+  "family": "go",
+  "backends": {
+    "go": {
+      "label": "Go — modules, gofmt, `go vet`, `go test`",
+      "targets": ["none", "existing", "aws", "azure"],
+      "options": {
+        "event-store": ["memory", "sqlite", "postgres"],
+        "http": ["none", "net-http"],
+        "auth": ["none", "keycloak", "cognito", "entra", "auth0"],
+        "users": ["none", "keycloak", "cognito", "auth0"]
+      },
+      "defaults": {"http": "net-http"}
+    }
+  }
+}
