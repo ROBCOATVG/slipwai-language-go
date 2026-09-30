@@ -131,6 +131,16 @@ def go_modules(paths: list[str]) -> str:
     return GO_MODULES.format(paths=" ".join(paths))
 
 
+# Said in `commands/mutation.md` and only where a Go service exists, because `SINCE` is the Go target's: the
+# skill teaches diff-scoped runs as the posture at this gate and the other backends reach for their own tool's
+# way of doing it. Without this line the scoped run is a flag in a Makefile nobody reading the command knows to
+# pass, and the unscoped run is the one that gets skipped for costing an hour.
+GO_MUTATION_SCOPING = """
+`make mutation SINCE=<review-base>` scopes the Go run to the production files that differ from that ref;
+without `SINCE` it mutates the whole module, which is a sweep rather than a check on this change. Either way
+the run leaves its report at `<service>/gremlins.json` — read that, not the scrollback.
+"""
+
 FAMILY_ANSWERS: dict[protocol.Member[Any], object] = {
     protocol.PIN_FILES: {},  # `go.mod`'s own `go` directive pins the toolchain
     protocol.MAKEFILE_VARIABLES: go_modules,
@@ -159,4 +169,5 @@ ANSWERS: dict[protocol.Member[Any], object] = {
     },
     protocol.MUTATION_TOOL: "Gremlins",
     protocol.MUTATION_NOTE: GO_MUTATION_NOTE,
+    protocol.MUTATION_SCOPING: GO_MUTATION_SCOPING,
 }
