@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from ... import registry as protocol
 from ...assets import LANGUAGE_ROOT, asset_tree
-from ...backends import APP
 from ...errors import GenerationError
 from ...selection import Selection
 from ...services import App
@@ -13,56 +12,15 @@ from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
 from ..mutation import GO_GREMLINS, GO_MUTATION_SCRIPT
+from . import go_toolchain as toolchain
+from .go_toolchain import GO_COVDATA_READY, GO_COVERAGE_MINIMUM, GO_COVERAGE_SCRIPT, GO_STATICCHECK, GO_TEST_COMMAND
 
-# The coverage gate `make test` holds a Go service to, and the script that is the gate. The test line writes
-# a profile with `-coverpkg=./...`, because without it Go credits a package only with its own tests and the
-# domain package — tested through every adapter, holding no `_test.go` of its own — reads 0%; the script
-# reads the profile back, leaves entry points and integration-tagged suites out of the count (its docstring
-# says why), and fails below the minimum. Spelled as one command and one gate line so the Makefile recipe
-# and the verify script below run the same thing.
-GO_COVERAGE_SCRIPT = "scripts/go-coverage.py"
-GO_TEST_COMMAND = "go test -coverpkg=./... -coverprofile=coverage.out ./..."
-GO_TEST = f"cd {APP} && {GO_TEST_COMMAND}"
-# The skeleton itself measures 78-83% in this gate's scope on every variant — memory, SQLite and Postgres
-# stores, with and without a transport and an identity provider (2026-09-09) — so 70 is below what a fresh
-# service starts at by a margin a first slice can spend, not a number the first test has to chase. It is on
-# the Makefile line so a project raises it there as the suite earns it.
-GO_COVERAGE_MINIMUM = 70
-GO_COVERAGE_GATE = f"python3 {GO_COVERAGE_SCRIPT} {APP} {GO_COVERAGE_MINIMUM}"
 # The token the mutation script carries where the pinned Gremlins release goes, so the pin is written once.
 GO_GREMLINS_TOKEN = "__GO_GREMLINS__"
 # What this service calls itself in a trace, carried in `config.go` as a token for the reason the module
 # path is: the file is Go, and an exported span has to name the service rather than the template it came
 # from. Resolved in `name_service`, where the project's name is known.
 SERVICE_NAME = "__SERVICE_NAME__"
-
-# Build `covdata` before anything races to exec it, and run this ahead of every `go test -cover` this
-# backend writes — the Makefile's `test` target through `native_commands`, and the verify script below.
-#
-# Go 1.24 and later stopped shipping the toolchain's own commands prebuilt and build them on demand into
-# the build cache instead. `go test -cover` then execs the resulting `covdata` once per package that has no
-# test files — several at a time, moments after the same `go` process wrote that file — and on a cold cache
-# one of those execs loses the race to the write that created it and dies with `text file busy`. That fails
-# the gate while naming a package with no tests in it, and nothing about the project is wrong. Every CI
-# runner starts cold, which is where it bites. A separate process that has exited before the parallel run
-# begins leaves that run a finished binary and nothing to write.
-#
-# `percent` over a directory holding no coverage data is the cheapest invocation that exits zero, and it is
-# spelled with no `$` so that one line serves a Makefile recipe and a `/bin/sh` script unchanged. `|| true`
-# is deliberate: a warm-up must never become the thing that fails a gate, so a later toolchain that spells
-# this differently leaves a project where it stands today rather than breaking it.
-GO_COVDATA_READY = "go tool covdata percent -i=. >/dev/null 2>&1 || true"
-
-# The third analyser in this backend's lint gate, after `gofmt` and `go vet`. `go vet` is deliberately
-# narrow — it reports what is almost certainly a mistake and nothing arguable — which leaves a large class
-# of real findings nobody sees: a value assigned and never read, a `defer` inside a loop, an error compared
-# with `==` where the chain has to be unwrapped, an `errors.New` built with a format string. staticcheck's
-# SA checks are those, and they are the ones a Go reviewer would raise by hand.
-#
-# `go tool` and not an installed binary: the module's `tool` directive pins it (`modules/base/go.mod`), so
-# `go mod download` fetches it with every other dependency and the gate needs no second install step on a
-# laptop, in the Compose container or in CI — and the version moves through `make locks` like the rest.
-GO_STATICCHECK = "go tool staticcheck ./..."
 
 
 def service_files(event: bool, selection: Selection, target: str = "none") -> dict[str, str]:
@@ -185,8 +143,8 @@ done
 
 
 LANGUAGE = protocol.Language(
-    (protocol.Family("go"),),
-    (protocol.Backend("go", "go", {
+    (protocol.Family("go", toolchain.FAMILY),),
+    (protocol.Backend("go", "go", toolchain.BACKEND | {
         protocol.SERVICE_FILES: service_files,
         protocol.NAME_SERVICE: name_service,
         protocol.REPOSITORY_FILES: repository_files,
