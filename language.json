@@ -6,14 +6,69 @@
   "backends": {
     "go": {
       "label": "Go — modules, gofmt, `go vet`, `go test`",
-      "targets": ["none", "existing", "aws", "azure"],
+      "targets": [
+        "none",
+        "existing",
+        "aws",
+        "azure"
+      ],
       "options": {
-        "event-store": ["memory", "sqlite", "postgres"],
-        "http": ["none", "net-http"],
-        "auth": ["none", "keycloak", "cognito", "entra", "auth0"],
-        "users": ["none", "keycloak", "cognito", "auth0"]
+        "event-store": [
+          "memory",
+          "sqlite",
+          "postgres"
+        ],
+        "http": [
+          "none",
+          "net-http"
+        ],
+        "auth": [
+          "none",
+          "keycloak",
+          "cognito",
+          "entra",
+          "auth0"
+        ],
+        "users": [
+          "none",
+          "keycloak",
+          "cognito",
+          "auth0"
+        ]
       },
-      "defaults": {"http": "net-http"}
+      "defaults": {
+        "http": "net-http"
+      }
+    }
+  },
+  "axes": {
+    "http": {
+      "net-http": {
+        "label": "net/http — standard-library JSON API, no framework dependency",
+        "capabilities": [
+          "http-net-http"
+        ],
+        "features": [
+          "net-http"
+        ],
+        "containers": [],
+        "migrations": false,
+        "integration-suite": false,
+        "targets": [
+          "none",
+          "existing",
+          "aws",
+          "azure"
+        ],
+        "app-in-compose": true,
+        "repository-owned": [
+          "packages/api-client"
+        ],
+        "web-app-owned": [
+          "src/routes",
+          "tests/routes"
+        ]
+      }
     }
   }
 }
