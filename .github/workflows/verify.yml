@@ -1,0 +1,28 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+    # A tag is what publishes. A green run on `main` is a package that works; it is not a package
+    # anybody asked for, and publishing every commit is how a chandlery fills with versions nobody
+    # chose. `git tag v1.1.0 && git push --follow-tags` is the whole of releasing.
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conformance:
+    uses: ROBCOATVG/slipwai_v2_Fork/.github/workflows/package.yml@main
+    with:
+      package: go
+      kind: language
+      # Where a tag publishes to. Empty publishes nowhere, which is right for a fork.
+      channel: 'ROBCOATVG/slipwai-index'
+      # Which keel to prove against: a bare version is one on PyPI, anything else is passed to pip as it
+      # stands. Empty installs `slipwai`, which is right once the version you need is published.
+      keel: 'git+https://github.com/ROBCOATVG/slipwai_v2_Fork@main'
+    # A token that may open a pull request on that channel. Without it a tag still builds the release
+    # and attaches it to itself, and `slipwai package register` finishes the job by hand — so a fork
+    # needs no credential and a package nobody owns can still be proved.
+    secrets:
+      chandlery_token: ${{ secrets.CHANDLERY_TOKEN }}
