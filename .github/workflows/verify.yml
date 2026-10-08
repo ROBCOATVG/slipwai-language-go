@@ -8,7 +8,17 @@ on:
     # chose. `git tag v1.1.0 && git push --follow-tags` is the whole of releasing.
     tags: ['v*']
   pull_request:
+  # The matrix is opt-in because it builds images and starts containers, and this is how it is opted
+  # into. Without the input there was no way to ask for it at all: the reusable workflow took it and
+  # nothing passed it, so the opt-in could not be opted into.
+  #
+  #   gh workflow run verify.yml -R <owner>/<repo> -f matrix=true
   workflow_dispatch:
+    inputs:
+      matrix:
+        description: Run the generated-variant matrix too — builds images and starts containers
+        type: boolean
+        default: false
 
 # A called workflow cannot ask for more than its caller has, and the publish job attaches the release to
 # this repository's own tag — so the permission is granted here or that job never starts. `contents: write`
@@ -22,6 +32,7 @@ jobs:
     with:
       package: go
       kind: language
+      matrix: ${{ inputs.matrix || false }}
       # Where a tag publishes to. Empty publishes nowhere, which is right for a fork.
       channel: 'ROBCOATVG/slipwai-index'
       # Which keel to prove against: a bare version is one on PyPI, anything else is passed to pip as it
