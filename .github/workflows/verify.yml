@@ -10,6 +10,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A called workflow cannot ask for more than its caller has, and the publish job attaches the release to
+# this repository's own tag — so the permission is granted here or that job never starts. `contents: write`
+# is this repository's own contents and nobody else's; the channel is reached with a token, not with this.
+permissions:
+  contents: write
+
 jobs:
   conformance:
     uses: ROBCOATVG/slipwai_v2_Fork/.github/workflows/package.yml@main
