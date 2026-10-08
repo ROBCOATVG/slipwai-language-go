@@ -32,6 +32,9 @@ jobs:
     with:
       package: go
       kind: language
+      # What the runner needs before the matrix can build a generated project with this
+      # language. Conformance needs none of it.
+      toolchains: 'go'
       # **The two-gate split, for a package.** A pull request gets conformance, which is the fast half
       # and the one an author runs over and over. `main` and a tag get the matrix as well — every
       # generated variant of every backend, each held to its own native gate — because that is the
