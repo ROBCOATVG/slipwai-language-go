@@ -32,6 +32,8 @@ jobs:
     with:
       package: go
       kind: language
+      # The matrix's `react-vite` row needs a language that answers the npm workspace.
+      beside: 'typescript'
       # What the runner needs before the matrix can build a generated project with this
       # language. Conformance needs none of it.
       toolchains: 'go'
