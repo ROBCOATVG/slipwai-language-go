@@ -68,7 +68,7 @@ TOOLING: Tooling = {
     # relative to the repository's.
     "seed": f"cd {APP} && go run ./cmd/seed $(abspath $(FILE))",
     "integration": f"cd {APP} && go test -tags=integration ./...",
-    "ci_image": "golang:1.26-bookworm",
+    "ci_image": "golang:1.27-bookworm",
     "ci_install": f"cd {APP} && go mod download",
     "container_setup": "",
     "container_environment": {},

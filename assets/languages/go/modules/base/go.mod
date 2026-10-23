@@ -1,15 +1,16 @@
 module example.com/delivery-starter
 
-go 1.26.0
+go 1.27.0
 
 // The gate's third analyser, beside `gofmt` and `go vet`. A `tool` directive rather than an installed
 // binary, so `go mod download` fetches it with everything else and `go tool staticcheck ./...` runs it
 // from the module cache with no second install step in a laptop, a container or a CI job — and so the
 // version is pinned in the same file, and the same lock, as every other dependency.
 //
-// `go 1.26.0` and not the 1.25 the skeleton itself needs: staticcheck requires it, and `go get -tool`
-// raises the directive to say so. `go.work` above is written from this directive, so the workspace
-// cannot end up pinned lower than a module it uses.
+// `go 1.27.0`: the current stable Go, which the staticcheck pinned here reads the export data of (an older
+// staticcheck could not, and failed every gate on a machine that had moved to 1.27). The skeleton itself needs
+// 1.25. A machine with an older `go` and the default `GOTOOLCHAIN=auto` downloads 1.27 for the run. `go.work`
+// above is written from this directive, so the workspace cannot end up pinned lower than a module it uses.
 tool honnef.co/go/tools/cmd/staticcheck
 
 require (
@@ -34,15 +35,15 @@ require (
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
-	golang.org/x/mod v0.38.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
-	golang.org/x/tools v0.48.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/grpc v1.83.1 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
-	honnef.co/go/tools v0.8.1 // indirect
+	honnef.co/go/tools v0.8.2 // indirect
 )

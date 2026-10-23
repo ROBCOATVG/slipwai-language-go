@@ -3,6 +3,18 @@
 No releases yet. Release notes are recorded here newest first, one entry per released version; the entry being
 written is `changelog.d/`.
 
+## 1.1.1 — PATCH
+
+**A generated Go service is on Go 1.27, and its gate passes on a machine that has it.** Go 1.27 writes export
+data the pinned staticcheck could not read, so `make lint` failed every Go project on a machine with the newest
+Go — `export data version 5 is greater than maximum supported version 4` — while passing on 1.26. staticcheck
+moves to 2026.2.2 (`honnef.co/go/tools` v0.8.2) with the `golang.org/x/tools` it needs, the modules' `go`
+directive to 1.27.0 and the CI image to `golang:1.27-bookworm`. A machine with an older `go` and the default
+`GOTOOLCHAIN=auto` downloads 1.27 for the run.
+
+**Catch-up:** `slipwai language upgrade go`, then `slipwai migrate`; a service's `go.mod` takes the new
+directive and tool pins.
+
 ## 1.1.0 — MINOR
 
 **A Go service answered `--write-model state` is given a versioned state repository instead of an event log.**
