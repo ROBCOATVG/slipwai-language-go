@@ -31,7 +31,7 @@ class Matrix(matrix.MatrixCase):
         because `make mutation` is run by no gate in a generated project (docs/backend-obligations.md
         section 2). Moved from the root suite with the rest of Go's matrix (D100)."""
         self.require("go")
-        repo = self.generate("mutation-go", "event-modelling", "go", "none", event_store="memory")
+        repo = self.generate("mutation-go", "event-modelling", "go", "none", persistence="memory")
         shared = repo / "packages/greeting"
         shared.mkdir()
         (shared / "go.mod").write_text("module example.com/mutation-go/greeting\n\ngo 1.22\n")

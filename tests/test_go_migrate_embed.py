@@ -18,7 +18,7 @@ class GoMigrateEmbedTest(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(
                 directory, "go-embed", language="go", target="aws",
-                event_store="postgres", http="net-http", auth="none",
+                persistence="postgres", http="net-http", auth="none",
             )
             self.assertTrue((repo / "apps/service/migrations/embed.go").is_file())
             self.assertTrue((repo / "apps/service/migrations/keep").is_file())

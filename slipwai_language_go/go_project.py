@@ -166,6 +166,9 @@ ANSWERS: dict[protocol.Member[Any], object] = {
         "domain": f"{service}/domain/<context>/decider.go",
         "usecase": f"{service}/application/<context>/usecase.go",
         "test": f"{service}/domain/<context>/<slice>_test.go (testing)",
+        # Read only for a service on the state-stored rung: the port it loads and saves current state
+        # through, where an event-sourced service has the event-store port.
+        "repository": f"{service}/application/ports/repository/repository.go",
     },
     protocol.MUTATION_TOOL: "Gremlins",
     protocol.MUTATION_NOTE: GO_MUTATION_NOTE,

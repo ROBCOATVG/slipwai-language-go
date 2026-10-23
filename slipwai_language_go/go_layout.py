@@ -16,12 +16,14 @@ from slipwai.project.entry_stores import EntryStore, tab_marked
 from slipwai.project.flag_route import EntryWiring
 from slipwai.project.flags import FlagReader
 
+from .go_state import STATE_WRITE
+
 # The write side: the event port, the adapters behind it, their contract suites and the migrations, and each
 # transport's and identity provider's own files.
 # Go keeps a package's tests beside its code, so there is no separate tests/ tree here. The
 # `.sql` migrations come from `../sql/`, shared with the Python backend: one schema, one
 # copy, because two copies of an event-log schema drift and nothing would notice.
-WRITE_SIDE: dict[str, dict[str, str]] = {
+WRITE_SIDE: dict[str, dict[str, Any]] = {
     "memory": {
         "application/ports/events/events.go": "events.go",
         "adapters/driven/eventstorememory/store.go": "event_store_memory.go",
@@ -44,6 +46,11 @@ WRITE_SIDE: dict[str, dict[str, str]] = {
         "migrations/keep": "migrations_keep",
         "migrations/001_events.sql": "../sql/001_events.sql",
         "migrations/002_events_append_only.sql": "../sql/002_events_append_only.sql",
+        # The seed door: `make seed-<service> FILE=<json>` appends the events a slice's `try-it.json`
+        # gives, through this store, with an identity derived from the event so a replay records nothing
+        # twice. Under the durable store because it needs one (slipwai's feedback-points plan, D4).
+        "cmd/seed/main.go": "seed_main.go",
+        "cmd/seed/main_test.go": "seed_main_test.go",
     },
     "net-http": {
         "adapters/driving/http/app.go": "http_app.go",
@@ -77,6 +84,11 @@ WRITE_SIDE: dict[str, dict[str, str]] = {
         "adapters/driving/http/users/userskeycloak/userskeycloak_test.go": "users_oidc_keycloak_test.go",
     },
 }
+
+# The state-stored rung's block, read instead of the rows above for a service answered `write-model: state`:
+# the repository's rows (`go_state.py`) and, unchanged, the transport's and the identity providers', which do
+# not depend on what the store is asked to hold. No `state` block on the read side — there is no checkpoint.
+WRITE_SIDE["state"] = {**STATE_WRITE, **{key: WRITE_SIDE[key] for key in ("net-http", "keycloak", "users-keycloak")}}
 
 # The read side: the checkpoint port and its adapters, the catch-up runner, and the migrations that create the
 # checkpoint table and the tag index. Every backend covers the same ground (`docs/backend-obligations.md` §3).
@@ -136,15 +148,15 @@ WIRING = {
     ),
 }
 
-# What this backend's entry point writes for each event-store answer: `entry_stores.py` says what the fields
+# What this backend's entry point writes for each persistence answer: `entry_stores.py` says what the fields
 # mean, and `composition.wire_store`, which reads it, the three rules every string here follows.
 GO_MEMORY_IMPORT = '\t"example.com/delivery-starter/adapters/driven/eventstorememory"\n'
 GO_PORT_IMPORT = '\t"example.com/delivery-starter/application/ports/events"\n'
-GO_FALLBACK = """	// The event store this project answered the event-store question with, opened once and handed to
-	// whatever needs it — from the checked environment rather than from os.Getenv, because `config` is
-	// where this service's variables are held to a shape.
+GO_FALLBACK = """	// The event store this project selected, opened once and handed to whatever needs it — from the
+	// checked environment rather than from os.Getenv, because `config` is where this service's
+	// variables are held to a shape.
 	//
-	// The marked block is the answer; delete it — which is what `./init --event-store memory` does —
+	// The marked block is the answer; delete it — which is what `./init --persistence memory` does —
 	// and the in-memory store it starts as is what is left — no nil check a marked block makes never-true (SA4023).
 	var store events.Store = eventstorememory.New()
 """
@@ -170,8 +182,8 @@ STORE = EntryStore(
     },
     open={
         None: (
-            "\t// The event store this project answered the event-store question with, opened once, here,\n"
-            "\t// and handed to whatever needs it. Nothing else in this service constructs one.\n"
+            "\t// The event store this project selected, opened once, here, and handed to whatever needs\n"
+            "\t// it. Nothing else in this service constructs one.\n"
             "\tstore := eventstorememory.New()\n\n"
         ),
         "sqlite": GO_FALLBACK

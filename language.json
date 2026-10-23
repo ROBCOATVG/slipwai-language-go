@@ -13,11 +13,6 @@
         "azure"
       ],
       "options": {
-        "event-store": [
-          "memory",
-          "sqlite",
-          "postgres"
-        ],
         "http": [
           "none",
           "net-http"
@@ -34,6 +29,15 @@
           "keycloak",
           "cognito",
           "auth0"
+        ],
+        "persistence": [
+          "memory",
+          "sqlite",
+          "postgres"
+        ],
+        "write-model": [
+          "events",
+          "state"
         ]
       },
       "defaults": {

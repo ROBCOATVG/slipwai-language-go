@@ -8,11 +8,18 @@ from __future__ import annotations
 PRUNE_ROWS = {
     "marked_files": ("config/config.go", "cmd/serve/main.go"),
     "owned_files": {
-        "sqlite": ("adapters/driven/eventstoresqlite", "adapters/driven/checkpointstoresqlite"),
+        "sqlite": (
+            "adapters/driven/eventstoresqlite",
+            "adapters/driven/checkpointstoresqlite",
+            # The state-stored rung's adapter, for a service answered `write-model: state`.
+            "adapters/driven/repositorysqlite",
+        ),
         "postgres": (
             "adapters/driven/eventstorepostgres",
+            "adapters/driven/repositorypostgres",
             "adapters/driven/checkpointstorepostgres",
             "cmd/migrate",
+            "cmd/seed",
             # embed.go (+ keep) is what puts the .sql files into the ko-built migrate image; without it the
             # command reads an empty working directory even when the repository has .sql files.
             "migrations/embed.go",
@@ -21,6 +28,8 @@ PRUNE_ROWS = {
             "migrations/002_events_append_only.sql",
             "migrations/003_projection_checkpoints.sql",
             "migrations/004_event_tags.sql",
+            # The state-stored rung's one table, in place of the four above.
+            "migrations/001_states.sql",
         ),
         "net-http": (
             "adapters/driving/http/app.go",

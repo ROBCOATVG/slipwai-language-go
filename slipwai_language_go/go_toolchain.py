@@ -63,6 +63,10 @@ GO_STATICCHECK = "go tool staticcheck ./..."
 TOOLING: Tooling = {
     "install": f"cd {APP} && go mod download",
     "migrate": f"cd {APP} && go run ./cmd/migrate",
+    # The seed door: the Makefile's `seed-<service> FILE=<json>` target hands the file through, made
+    # absolute first because the command runs from the service's directory and a person types a path
+    # relative to the repository's.
+    "seed": f"cd {APP} && go run ./cmd/seed $(abspath $(FILE))",
     "integration": f"cd {APP} && go test -tags=integration ./...",
     "ci_image": "golang:1.26-bookworm",
     "ci_install": f"cd {APP} && go mod download",
@@ -105,8 +109,13 @@ def dev_command(qualifier: str, path: str, verify: str) -> str:
     return f"cd {path} && LOG_FORMAT=pretty go run ./cmd/serve"
 
 
-def event_store_directory(path: str) -> str:
-    """Where one service's driven adapters live, for prose that has to point at them."""
+def persistence_directory(path: str) -> str:
+    """Where one service's driven adapters live, for prose that has to point at them.
+
+    One answer for both rungs: the event store's adapters and the state repository's land in the same
+    directory, and the prose that reads this says which of the two it means. The member was called
+    `event_store_directory` until the rung became a question.
+    """
     return f"{path}/adapters/driven/"
 
 
@@ -117,7 +126,7 @@ BACKEND: dict[protocol.Member[Any], object] = {
     protocol.EXECUTABLES: frozenset({GO_COVERAGE_SCRIPT, GO_MUTATION_SCRIPT}),
     protocol.DEV_COMMAND: dev_command,
     protocol.COMPOSE_CACHES: ("/root/go", "/root/.cache"),
-    protocol.EVENT_STORE_DIRECTORY: event_store_directory,
+    protocol.PERSISTENCE_DIRECTORY: persistence_directory,
     protocol.NATIVE_COMMANDS: native_commands,
 }
 # Over `$(GO_MODULES)`, the one list `lint` reads too (`makefile.py`), so the two can never cover different

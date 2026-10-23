@@ -22,6 +22,7 @@ from slipwai.tooling import package_name
 
 from . import go_layout as layout
 from . import go_project as project
+from . import go_state as state
 from . import go_toolchain as toolchain
 from .go_project import GO_GREMLINS, GO_MUTATION_SCRIPT
 from .go_prune_rows import PRUNE_ROWS
@@ -58,8 +59,12 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
     # `/api/flags` in front of the browser app. `nil`, not an unresolved placeholder, with no reader.
     wire_entry(files, target, "go")
     # And the store's half: which adapter this project opens, and what `/ready` is handed. See
-    # `composition.py` — the entry point is the only place that may name the answer.
-    wire_store(files, selection, "go")
+    # `composition.py` — the entry point is the only place that may name the answer. A service on the
+    # state-stored rung opens a repository rather than a log, and `go_state.py` composes that one.
+    if selection.write_model == "state":
+        state.state_files(files, selection)
+    else:
+        wire_store(files, selection, "go")
     return files
 
 
